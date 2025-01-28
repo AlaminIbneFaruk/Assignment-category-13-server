@@ -1,7 +1,7 @@
-const express = require('express');
-const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
-require('dotenv').config();
+const express = require("express");
+const cors = require("cors");
+const { MongoClient, ServerApiVersion } = require("mongodb");
+require("dotenv").config();
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -17,7 +17,7 @@ const client = new MongoClient(uri, {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  }
+  },
 });
 
 async function run() {
@@ -27,25 +27,52 @@ async function run() {
     console.log("Connected to MongoDB!");
 
     // Example database and collection
-    const database = client.db('ArtifactBazaar');
-    const collection = database.collection('artifacts');
+    const database = client.db("ArtifactBazaar");
+    const collection = database.collection("artifacts");
 
-    // Example route to fetch data
-    app.get('/artifacts', async (req, res) => {
-      const artifacts = await collection.find().toArray();
-      res.send(artifacts);
+    // GET route to fetch all artifacts
+    app.get("/all-Artifacts", async (req, res) => {
+      try {
+        const artifacts = await collection.find().toArray();
+        res.send(artifacts);
+      } catch (error) {
+        res.status(500).send({
+          message: "Failed to fetch artifacts",
+          error: error.message,
+        });
+      }
+    });
+    // POST route to add new artifact
+    app.post("/add-Artifact", async (req, res) => {
+      const artifact = req.body;
+      try {
+        const result = await collection.insertOne(artifact);
+        res.status(201).send({
+          message: "Artifact added successfully",
+          result,
+        });
+      } catch (error) {
+        res.status(500).send({
+          message: "Failed to add artifact",
+          error: error.message,
+        });
+      }
     });
 
+
+    // Ping the database
+    await client.db("admin").command({ ping: 1 });
+    console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } catch (error) {
     console.error("Error connecting to MongoDB:", error.message);
   }
 }
 
-run();
+run().catch((error) => console.error(error));
 
 // Default route
-app.get('/', (req, res) => {
-  res.send('Hello World!');
+app.get("/", (req, res) => {
+  res.send("Hello World!");
 });
 
 // Start server
